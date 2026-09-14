@@ -1,5 +1,5 @@
 # 1. Image de base légère (Le système d'exploitation)
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 # 2. Définition du répertoire de travail dans le conteneur
 WORKDIR /app
