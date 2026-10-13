@@ -28,14 +28,19 @@ df_clean = df.dropna(subset=['time_delta_with_previous_rental_in_minutes'])
 # 5. Section 1 : Analyse Graphique
 st.subheader("📊 1. Distribution des retards au Checkout")
 # Création du graphique interactif avec Plotly
+# On zoome sur les retards entre -200 et +200 minutes (les cas extrêmes écrasent le graphique)
+df_graph = df[df["delay_at_checkout_in_minutes"].between(-200, 200)]
+nb_exclus = df["delay_at_checkout_in_minutes"].notna().sum() - len(df_graph)
+
 fig = px.histogram(
-    df, 
-    x="delay_at_checkout_in_minutes", 
-    nbins=100,
+    df_graph,
+    x="delay_at_checkout_in_minutes",
+    nbins=80,
     title="Analyse des minutes de retard (Négatif = En avance)",
     color_discrete_sequence=['#FF4B4B']
 )
 st.plotly_chart(fig, use_container_width=True)
+st.caption(f"Graphique zoomé entre -200 et +200 minutes : {nb_exclus} locations avec des retards extrêmes ne sont pas affichées.")
 
 # 6. Section 2 : Le Simulateur Métier
 st.subheader("⚙️ 2. Simulateur de Seuil de Battement (Threshold)")
@@ -57,8 +62,7 @@ else:
 # 8. Calculs d'impact
 total_rentals = len(df_simul)
 impacted_rentals = len(df_simul[
-    (df_simul['time_delta_with_previous_rental_in_minutes'] < threshold) & 
-    (df_simul['time_delta_with_previous_rental_in_minutes'] > 0)
+    df_simul['time_delta_with_previous_rental_in_minutes'] < threshold
 ])
 revenus_perdus_pourcentage = (impacted_rentals / total_rentals) * 100 if total_rentals > 0 else 0
 
@@ -66,5 +70,5 @@ revenus_perdus_pourcentage = (impacted_rentals / total_rentals) * 100 if total_r
 st.markdown("### 📈 Résultats de la simulation")
 kpi1, kpi2, kpi3 = st.columns(3)
 kpi1.metric(label="Total locations analysées", value=total_rentals)
-kpi2.metric(label="Locations annulées (Impactées)", value=impacted_rentals)
-kpi3.metric(label="Perte de revenus estimée", value=f"{revenus_perdus_pourcentage:.1f} %")
+kpi2.metric(label="Locations impactées (délai trop court)", value=impacted_rentals)
+kpi3.metric(label="Part des locations impactées", value=f"{revenus_perdus_pourcentage:.1f} %")
